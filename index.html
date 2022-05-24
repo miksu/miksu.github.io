@@ -10,46 +10,57 @@
 </style>
 </head>
 <body>
+<div id="my_canvas"></div>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.6.347/build/pdf.min.js" />
+<script>
+function renderPDF(url, canvasContainer) {
 
-<script type="text/javascript" src="https://raw.github.com/mozilla/pdf.js/gh-pages/build/pdf.js"></script>
-<script type="text/javascript">
-function renderPDF(url, canvasContainer, options) {
+	function renderPage(page) {
 
-    var options = options || { scale: 1 };
+    let viewport = page.getViewport({scale: .5})
+    const DPI = 72;
+    const PRINT_OUTPUT_SCALE = DPI/72;
+    const scale = canvasContainer.clientWidth / viewport.width;
+		const canvas = document.createElement('canvas')
 
-    function renderPage(page) {
-        var viewport = page.getViewport(options.scale);
-        var canvas = document.createElement('canvas');
-        var ctx = canvas.getContext('2d');
-        var renderContext = {
-          canvasContext: ctx,
-          viewport: viewport
-        };
+    const ctx = canvas.getContext('2d')
+    viewport = page.getViewport({scale})
 
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
+    canvas.width = Math.floor(viewport.width * PRINT_OUTPUT_SCALE);
+    canvas.height = Math.floor(viewport.height * PRINT_OUTPUT_SCALE);
+    canvas.style.width = '100%';
 
-        canvasContainer.appendChild(canvas);
+    canvas.style.transform = 'scale(1,1)';
+    canvas.style.transformOrigin = '0% 0%';
 
-        page.render(renderContext);
-    }
+    const canvasWrapper = document.createElement('div');
 
-    function renderPages(pdfDoc) {
-        for(var num = 1; num <= pdfDoc.numPages; num++)
-            pdfDoc.getPage(num).then(renderPage);
-    }
+    canvasWrapper.style.width = '100%';
+    canvasWrapper.style.height = '100%';
 
-    PDFJS.disableWorker = true;
-    PDFJS.getDocument(url).then(renderPages);
+    canvasWrapper.appendChild(canvas);
 
+		const renderContext = {
+			canvasContext: ctx,
+			viewport,
+		}
+
+		canvasContainer.appendChild(canvasWrapper)
+
+		page.render(renderContext)
+	}
+
+	function renderPages(pdfDoc) {
+		for (let num = 1; num <= pdfDoc.numPages; num += 1)
+			pdfDoc.getPage(num).then(renderPage)
+	}
+
+	pdfjsLib.disableWorker = true
+	pdfjsLib.getDocument(url).promise.then(renderPages)
 }
+
+renderPDF('chronovariations.pdf', document.getElementById('my_canvas')) //div element
+
 </script>
-
-<div id="holder"></div>
-
-<script type="text/javascript">
-renderPDF('chronovariations.pdf', document.getElementById('holder'));
-</script>
-
 </body>
 </html>
